@@ -1,0 +1,9 @@
+# Оповещения personal_notify по расписанию.
+# Установка: crontab -e  (или: crontab deploy/crontab.example)
+# Замените путь проекта под своё окружение.
+
+# Часовой пояс расписания
+CRON_TZ=Europe/Moscow
+
+# Прогноз погоды по Москве каждый день в 08:00 МСК
+0 8 * * * cd /data/projects/personal_notify && .venv/bin/python -m bot.tasks weather >> logs/weather.log 2>&1

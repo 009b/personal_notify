@@ -39,6 +39,9 @@ logs/
 *.db
 *.sqlite3
 
+# Local config
+config.yaml
+
 # Coverage
 .coverage
 htmlcov/

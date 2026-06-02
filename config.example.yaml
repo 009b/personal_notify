@@ -1,0 +1,25 @@
+# Структурные настройки personal_notify.
+# Скопируйте в config.yaml и отредактируйте. Секреты — в .env.
+
+ollama:
+  base_url: "http://127.0.0.1:11434"   # можно переопределить переменной OLLAMA_BASE_URL
+  default_model: "qwen3:8b"            # список моделей: ollama list
+  request_timeout: 180                 # запас на холодный старт модели
+  options:
+    temperature: 0.4
+  prompts:
+    notify: >-
+      Кратко и по делу оформи данные оповещения на русском.
+      Для выделения используй только HTML-теги Telegram: <b>жирный</b>, <i>курсив</i>.
+      Не используй Markdown (символы * и #) и не добавляй пояснений — только готовый текст.
+
+weather:
+  provider: "gismeteo"
+  location:
+    city: "Moscow"
+    latitude: 55.7558
+    longitude: 37.6173
+
+storage:
+  backend: "sqlite"
+  path: "data/notify.db"

@@ -1,0 +1,18 @@
+[Unit]
+Description=personal_notify Telegram bot (демон команд и приёма событий)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Замените User/группу и пути под своё окружение.
+User=vadim
+Group=users
+WorkingDirectory=/data/projects/personal_notify
+EnvironmentFile=/data/projects/personal_notify/.env
+ExecStart=/data/projects/personal_notify/.venv/bin/python -m bot.main
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

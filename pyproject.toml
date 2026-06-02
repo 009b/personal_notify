@@ -11,9 +11,10 @@ requires-python = ">=3.12"
 dependencies = [
     "aiogram>=3.0",
     "python-dotenv>=1.0",
-    # "apscheduler>=3.10",   # for cron reminders
-    # "aiosqlite>=0.19",     # for local storage
-    # "aiohttp>=3.9",        # for webhook server
+    "httpx>=0.27",   # Ollama, Gismeteo
+    "PyYAML>=6",     # config.yaml
+    # storage: sqlite3 (stdlib)
+    # scheduler: системный cron
 ]
 
 [project.optional-dependencies]
