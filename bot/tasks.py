@@ -48,7 +48,9 @@ async def run_weather() -> None:
 
     bot = Bot(token=settings.bot_token)
     try:
-        await Notifier(bot, settings.allowed_user_id).notify(text, parse_mode=parse_mode)
+        await Notifier(bot, settings.allowed_user_id).notify(
+            text, parse_mode=parse_mode, disable_notification=config.weather.silent
+        )
     finally:
         await bot.session.close()
 

@@ -3,26 +3,48 @@ from __future__ import annotations
 
 from bot.services.weather.base import Forecast
 
+# Подписи частей суток в порядке вывода.
+_PART_LABELS = [
+    ("night", "Ночь"),
+    ("morning", "Утро"),
+    ("day", "День"),
+    ("evening", "Вечер"),
+]
+
 
 def format_forecast(forecast: Forecast) -> str:
     """Шаблонное (без LLM) представление прогноза для отправки в Telegram."""
-    lines = [f"Погода в городе {forecast.city}"]
+    lines = [f"Погода в {forecast.city}"]
+
+    # Описание + ветер + порывы — одной смысловой строкой.
+    sky = []
     if forecast.description:
-        lines.append(str(forecast.description))
-    if forecast.temperature is not None:
-        line = f"Температура: {forecast.temperature}°C"
-        if forecast.feels_like is not None:
-            line += f" (ощущается {forecast.feels_like}°C)"
-        lines.append(line)
+        sky.append(str(forecast.description).lower())
     if forecast.wind_speed is not None:
-        line = f"Ветер: {forecast.wind_speed} м/с"
+        wind = f"ветер {forecast.wind_speed} м/с"
         if forecast.wind_gust is not None:
-            line += f", порывы до {forecast.wind_gust} м/с"
-        lines.append(line)
-    if forecast.humidity is not None:
-        lines.append(f"Влажность: {forecast.humidity}%")
-    if forecast.pressure is not None:
-        lines.append(f"Давление: {forecast.pressure} мм рт. ст.")
+            wind += f", порывы до {forecast.wind_gust} м/с"
+        sky.append(wind)
+    if sky:
+        line = ", ".join(sky)
+        lines.append(line[0].upper() + line[1:])
+
+    # Температура по частям суток — одной строкой.
+    parts = [
+        f"{label}: {forecast.parts_of_day[key]}°C"
+        for key, label in _PART_LABELS
+        if key in forecast.parts_of_day
+    ]
+    if parts:
+        lines.append(", ".join(parts))
+
+    # Осадки + влажность — одной строкой (про влагу).
+    moisture = []
     if forecast.precipitation is not None:
-        lines.append(f"Осадки: {forecast.precipitation} мм")
+        moisture.append(f"Осадки: {forecast.precipitation} мм")
+    if forecast.humidity is not None:
+        moisture.append(f"Влажность: {forecast.humidity}%")
+    if moisture:
+        lines.append(". ".join(moisture))
+
     return "\n".join(lines)

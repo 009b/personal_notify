@@ -30,13 +30,17 @@ def sanitize(text: str) -> str:
         out.append(_escape(text[last : m.start()]))
         last = m.end()
 
-        closing, name, attrs = m.group(1), m.group(2).lower(), m.group(3)
+        closing, name = m.group(1), m.group(2).lower()
         if name in ALLOWED_TAGS:
             out.append(f"<{closing}{name}>")  # сбрасываем атрибуты ради безопасности
         # неразрешённый тег — пропускаем (удаляем)
 
     out.append(_escape(text[last:]))
-    return "".join(out)
+    result = "".join(out)
+    # Схлопываем подряд идущие переводы строк в один (одинарные отступы)
+    # и убираем хвостовые пробелы по краям.
+    result = re.sub(r"[ \t]*\n[ \t]*(?:\n[ \t]*)+", "\n", result)
+    return result.strip()
 
 
 def _escape(chunk: str) -> str:

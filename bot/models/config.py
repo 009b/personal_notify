@@ -42,6 +42,7 @@ class WeatherLocation:
 class WeatherConfig:
     provider: str = "gismeteo"
     location: WeatherLocation = field(default_factory=WeatherLocation)
+    silent: bool = False  # отправлять оповещение без звука (disable_notification)
 
 
 @dataclass

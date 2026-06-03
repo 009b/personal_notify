@@ -85,6 +85,7 @@ def _build_app_config(raw: dict) -> AppConfig:
             latitude=location_raw.get("latitude", WeatherLocation.latitude),
             longitude=location_raw.get("longitude", WeatherLocation.longitude),
         ),
+        silent=weather_raw.get("silent", WeatherConfig.silent),
     )
 
     storage_raw = raw.get("storage") or {}
