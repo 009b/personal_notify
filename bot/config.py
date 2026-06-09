@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from bot.models.config import (
     AppConfig,
+    NewsConfig,
     OllamaConfig,
     Settings,
     StorageConfig,
@@ -39,10 +40,19 @@ def load_settings() -> Settings:
     except ValueError as exc:
         raise ConfigError("ALLOWED_USER_ID должен быть целым числом") from exc
 
+    tg_api_id_raw = os.getenv("TG_API_ID")
+    try:
+        tg_api_id = int(tg_api_id_raw) if tg_api_id_raw else None
+    except ValueError as exc:
+        raise ConfigError("TG_API_ID должен быть целым числом") from exc
+
     return Settings(
         bot_token=_require("BOT_TOKEN"),
         allowed_user_id=allowed_user_id,
         gismeteo_token=os.getenv("GISMETEO_TOKEN") or None,
+        tg_api_id=tg_api_id,
+        tg_api_hash=os.getenv("TG_API_HASH") or None,
+        tg_session_path=os.getenv("TG_SESSION_PATH", Settings.tg_session_path),
         log_level=os.getenv("LOG_LEVEL", "INFO"),
         debug=os.getenv("DEBUG", "false").strip().lower() in {"1", "true", "yes"},
     )
@@ -94,4 +104,15 @@ def _build_app_config(raw: dict) -> AppConfig:
         path=storage_raw.get("path", StorageConfig.path),
     )
 
-    return AppConfig(ollama=ollama, weather=weather, storage=storage)
+    news_raw = raw.get("news") or {}
+    news = NewsConfig(
+        enabled=news_raw.get("enabled", NewsConfig.enabled),
+        sources=list(news_raw.get("sources") or []),
+        window_hours=news_raw.get("window_hours", NewsConfig.window_hours),
+        exclude_topics=list(news_raw.get("exclude_topics") or []),
+        max_posts=news_raw.get("max_posts", NewsConfig.max_posts),
+        max_post_chars=news_raw.get("max_post_chars", NewsConfig.max_post_chars),
+        silent=news_raw.get("silent", NewsConfig.silent),
+    )
+
+    return AppConfig(ollama=ollama, weather=weather, storage=storage, news=news)

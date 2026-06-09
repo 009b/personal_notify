@@ -34,7 +34,7 @@
 | Модуль                          | Назначение                                              | Статус |
 |---------------------------------|---------------------------------------------------------|--------|
 | `bot/main.py`                   | Точка входа демона, фильтр доступа, запуск polling      | готово |
-| `bot/tasks.py`                  | CLI-задачи для cron (задача `weather`)                  | готово |
+| `bot/tasks.py`                  | CLI-задачи для cron (задачи `weather`, `news`, `news_login`) | готово |
 | `bot/config.py`                 | Конфигурация: `.env` (секреты) + `config.yaml`          | готово |
 | `bot/models/config.py`          | Типы конфигурации (Settings, AppConfig и пр.)           | готово |
 | `bot/access.py`                 | Фильтр `OwnerOnly` (whitelist по user_id)               | готово |
@@ -43,6 +43,8 @@
 | `bot/services/weather/`         | Интерфейс `WeatherProvider` + `GismeteoProvider` + форматтер | готово |
 | `bot/services/notifier.py`      | Отправка сообщений владельцу в Telegram (с parse_mode)  | готово |
 | `bot/services/telegram_html.py` | Санитизация HTML под ограничения Telegram               | готово |
+| `bot/services/telegram_reader.py` | Чтение постов каналов через Telethon (MTProto)        | готово |
+| `bot/services/news/`            | Новостной дайджест: модели, пайплайн (фильтр+суммаризация LLM), формат | готово |
 | `bot/storage/`                  | Интерфейс `Storage` + `SqliteStorage` (stdlib) + фабрика | готово |
 | `bot/events/`                   | Каркас событий (`EventSource`, `Event`) + `EventProcessor` | готово (каркас) |
 
@@ -66,6 +68,16 @@
 - `Forecast` содержит: температуру по всем частям суток ближайшего дня (`parts_of_day` — ключи `night`/`morning`/`day`/`evening`, округлённую до целых), описание из `cloudiness.scale_3`, ветер, влажность, осадки. Текущая температура и давление не используются.
 - Формат сообщения компактный, только на русском, с объединением по смыслу: заголовок «Погода в <city>» (city задаётся в конфиге в нужном падеже, напр. «Москве»); строка «описание + ветер + порывы»; температура по частям суток одной строкой; строка «осадки + влажность».
 - Беззвучная доставка: `weather.silent` в конфиге → `disable_notification` при отправке (сообщение приходит без звука).
+
+## Новостной дайджест
+
+- Отдельная cron-задача `news` (batch-пайплайн), не потоковый `EventProcessor`.
+- Чтение каналов — `bot/services/telegram_reader.py` через Telethon (MTProto-юзербот). Нужны `TG_API_ID`/`TG_API_HASH` (.env) и session-файл (`TG_SESSION_PATH`, по умолчанию `data/userbot.session`). Сессия создаётся один раз интерактивно: `python -m bot.tasks news_login`.
+- Пайплайн `bot/services/news/pipeline.py`: `collect` (за окно `window_hours`) → `filter_posts` (LLM по `exclude_topics`, отсев детерминированно по индексам) → `summarize` (LLM группирует по темам, ссылается на источники как `[N]`) → `format` (подстановка `[N]` → HTML-ссылка из `Post.url`, sanitize).
+- Ссылки на исходные посты подставляет код, не модель (чтобы не искажать URL).
+- Пустой результат → «За последние сутки новостей нет».
+- Конфиг — секция `news` (`sources`, `window_hours`, `exclude_topics`, `max_posts`, `max_post_chars`, `silent`); промпты `ollama.prompts.news_filter` / `news_digest`.
+- Беззвучная доставка: `news.silent`.
 
 ## Хранилище данных
 

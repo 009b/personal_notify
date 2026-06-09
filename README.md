@@ -9,6 +9,7 @@
 - Прогноз погоды через провайдер Gismeteo (общий интерфейс — провайдер легко заменить).
 - Обвязка вокруг локальной Ollama: обработка текста оповещений, выбор модели и опции.
 - Команды `/start`, `/help`, `/status`; доступ только для владельца (whitelist по user_id).
+- Новостной дайджест: сбор постов из Telegram-каналов за сутки, фильтрация по темам и суммаризация через LLM, выжимка со ссылками на источники.
 
 ## Установка
 
@@ -16,8 +17,20 @@
 python3.12 -m venv .venv
 .venv/bin/pip install -e .          # для разработки: -e ".[dev]"
 cp .env.example .env                # заполнить BOT_TOKEN, ALLOWED_USER_ID, GISMETEO_TOKEN
-cp config.example.yaml config.yaml  # модель Ollama, локация, хранилище
+cp config.example.yaml config.yaml  # модель Ollama, локация, хранилище, новости
 ```
+
+### Новостной дайджест (Telethon)
+
+Чтение каналов идёт через MTProto-юзербот, поэтому нужен аккаунт Telegram:
+
+1. Получите `TG_API_ID` и `TG_API_HASH` на https://my.telegram.org, впишите в `.env`.
+2. В `config.yaml` включите `news.enabled: true` и задайте `news.sources`, `news.exclude_topics`.
+3. Разовая авторизация (создаёт session-файл, спросит телефон и код):
+
+   ```bash
+   .venv/bin/python -m bot.tasks news_login
+   ```
 
 ## Запуск
 
@@ -32,6 +45,7 @@ cp config.example.yaml config.yaml  # модель Ollama, локация, хр�
 ```
 CRON_TZ=Europe/Moscow
 0 8 * * * cd /path/to/personal_notify && .venv/bin/python -m bot.tasks weather
+0 8 * * * cd /path/to/personal_notify && .venv/bin/python -m bot.tasks news
 ```
 
 ## Деплой

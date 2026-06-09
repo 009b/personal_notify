@@ -39,6 +39,10 @@ logs/
 *.db
 *.sqlite3
 
+# Telethon session
+*.session
+*.session-journal
+
 # Local config
 config.yaml
 

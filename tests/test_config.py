@@ -47,6 +47,45 @@ def test_load_app_config_parses_values(tmp_path):
     assert cfg.storage.path == "/tmp/x.db"
 
 
+def test_load_news_config(tmp_path):
+    path = tmp_path / "config.yaml"
+    path.write_text(
+        "news:\n"
+        "  enabled: true\n"
+        "  sources: [durov, meduzalive]\n"
+        "  window_hours: 12\n"
+        "  exclude_topics: [Трамп]\n"
+        "  max_posts: 50\n"
+        "  silent: false\n",
+        encoding="utf-8",
+    )
+    cfg = load_app_config(path)
+    assert cfg.news.enabled is True
+    assert cfg.news.sources == ["durov", "meduzalive"]
+    assert cfg.news.window_hours == 12
+    assert cfg.news.exclude_topics == ["Трамп"]
+    assert cfg.news.max_posts == 50
+    assert cfg.news.silent is False
+
+
+def test_news_config_defaults_when_absent(tmp_path):
+    path = tmp_path / "config.yaml"
+    path.write_text("weather: {provider: gismeteo}\n", encoding="utf-8")
+    cfg = load_app_config(path)
+    assert cfg.news.enabled is False
+    assert cfg.news.sources == []
+
+
+def test_load_settings_reads_tg_credentials(monkeypatch):
+    monkeypatch.setenv("BOT_TOKEN", "token")
+    monkeypatch.setenv("ALLOWED_USER_ID", "1")
+    monkeypatch.setenv("TG_API_ID", "12345")
+    monkeypatch.setenv("TG_API_HASH", "abc")
+    s = load_settings()
+    assert s.tg_api_id == 12345
+    assert s.tg_api_hash == "abc"
+
+
 def test_ollama_base_url_env_override(tmp_path, monkeypatch):
     path = tmp_path / "config.yaml"
     path.write_text("ollama:\n  base_url: http://from-file:1\n", encoding="utf-8")

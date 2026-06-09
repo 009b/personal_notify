@@ -14,10 +14,12 @@ import logging
 
 from aiogram import Bot
 
-from bot.config import load_app_config, load_settings
+from bot.config import ConfigError, load_app_config, load_settings
 from bot.services.llm import LLMError, OllamaClient
+from bot.services.news.pipeline import NewsPipeline
 from bot.services.notifier import Notifier
 from bot.services.telegram_html import sanitize as sanitize_telegram_html
+from bot.services.telegram_reader import TelegramReader, build_client
 from bot.services.weather import build_provider
 from bot.services.weather.format import format_forecast
 
@@ -55,8 +57,60 @@ async def run_weather() -> None:
         await bot.session.close()
 
 
+def _require_tg_credentials(settings) -> tuple[int, str]:
+    if not settings.tg_api_id or not settings.tg_api_hash:
+        raise ConfigError("Для новостей нужны TG_API_ID и TG_API_HASH в .env")
+    return settings.tg_api_id, settings.tg_api_hash
+
+
+async def run_news() -> None:
+    settings = load_settings()
+    config = load_app_config()
+
+    if not config.news.enabled:
+        logger.info("Новостной дайджест выключен (news.enabled=false)")
+        return
+
+    api_id, api_hash = _require_tg_credentials(settings)
+    client = build_client(api_id, api_hash, settings.tg_session_path)
+
+    await client.connect()
+    try:
+        if not await client.is_user_authorized():
+            raise ConfigError(
+                "Telethon-сессия не авторизована. Выполните: python -m bot.tasks news_login"
+            )
+        reader = TelegramReader(client)
+        pipeline = NewsPipeline(reader, OllamaClient(config.ollama), config.news, config.ollama.prompts)
+        text = await pipeline.build_digest()
+    finally:
+        await client.disconnect()
+
+    bot = Bot(token=settings.bot_token)
+    try:
+        await Notifier(bot, settings.allowed_user_id).notify(
+            text, parse_mode="HTML", disable_notification=config.news.silent
+        )
+    finally:
+        await bot.session.close()
+
+
+async def run_news_login() -> None:
+    """Разовый интерактивный вход в Telegram-аккаунт (создаёт session-файл)."""
+    settings = load_settings()
+    api_id, api_hash = _require_tg_credentials(settings)
+    client = build_client(api_id, api_hash, settings.tg_session_path)
+    # start() запросит номер телефона и код подтверждения в консоли.
+    await client.start()
+    me = await client.get_me()
+    logger.info("Авторизован как %s (id=%s)", getattr(me, "username", None), getattr(me, "id", None))
+    await client.disconnect()
+
+
 TASKS = {
     "weather": run_weather,
+    "news": run_news,
+    "news_login": run_news_login,
 }
 
 

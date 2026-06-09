@@ -37,3 +37,12 @@
 - [x] crontab для задач по расписанию (`deploy/crontab.example`)
 - [x] Проверка боевого прогона задачи `weather` под cron (end-to-end)
 - [x] Инструкция установки в README
+
+## Фаза 5 — Новостной дайджест
+- [ ] Зависимость Telethon + секреты (`TG_API_ID`/`TG_API_HASH`/`TG_SESSION_PATH`)
+- [ ] Конфиг секции `news` + промпты `news_filter`/`news_digest`
+- [ ] `telegram_reader` (чтение постов каналов за окно)
+- [ ] Пайплайн: collect → filter(LLM) → summarize(LLM) → format со ссылками
+- [ ] CLI-задачи `news` и `news_login` + строка crontab
+- [ ] Тесты (reader, pipeline, format, run_news; без сети)
+- [ ] Боевой прогон + обновление README/STATUS

@@ -16,6 +16,9 @@ class Settings:
     bot_token: str
     allowed_user_id: int
     gismeteo_token: str | None = None
+    tg_api_id: int | None = None
+    tg_api_hash: str | None = None
+    tg_session_path: str = "data/userbot.session"
     log_level: str = "INFO"
     debug: bool = False
 
@@ -52,9 +55,23 @@ class StorageConfig:
 
 
 @dataclass
+class NewsConfig:
+    """Настройки новостного дайджеста."""
+
+    enabled: bool = False
+    sources: list[str] = field(default_factory=list)
+    window_hours: int = 24
+    exclude_topics: list[str] = field(default_factory=list)
+    max_posts: int = 200
+    max_post_chars: int = 600
+    silent: bool = True
+
+
+@dataclass
 class AppConfig:
     """Структурные настройки из YAML-конфига."""
 
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
     weather: WeatherConfig = field(default_factory=WeatherConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
+    news: NewsConfig = field(default_factory=NewsConfig)
